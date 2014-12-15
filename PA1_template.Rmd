@@ -1,25 +1,83 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "PA1_template.Rmd"
+author: "Meryem Sah"
+date: "Sunday, December 14, 2014"
+output: html_document
 ---
 
 
-## Loading and preprocessing the data
+##1. Loading and preprocessing the data##
+
+```{r, echo=TRUE}
+data <- read.csv("activity.csv", header=TRUE, col.names = c("steps", "date", "interval"), colClasses=c("numeric","character","numeric"))
+
+head(data)
+summary(data)
+str(data)
+
+date <- as.Date(data$date, "%Y-%m-%d")
+interval <- as.factor(data$interval)
+
+```
+
+###2. What is mean total number of steps taken per day?
+
+```{r, echo=TRUE}
+dailysteps <- aggregate(steps ~ date, data, FUN=sum, na.rm=TRUE)
+hist(dailysteps$steps, breaks=10,ylab="Steps", xlab="Date", main="Steps per day", col="green")
+
+mean(dailysteps$steps)
+median(dailysteps$steps)
+```
+
+##3. What is the average daily activity pattern?
+
+```{r, echo=TRUE}
+dailyinterval <- aggregate(steps ~ interval, data, FUN=mean, na.rm=TRUE)
+plot(dailyinterval$steps, type="l", col="blue", ylab="Steps", xlab="Interval")
+```
 
 
+###3.1 Maximum number of steps?
 
-## What is mean total number of steps taken per day?
+```{r, echo=TRUE}
+dailyinterval$interval[which.max(dailyinterval$steps)]
+```
+
+##4. Imputing missing values
+
+```{r, echo=TRUE}
+
+sum(is.na(data))
+
+datawithfilledNA <- merge(data, dailyinterval, by="interval", suffixes = c("",".new"))
+filledNA <- is.na(datawithfilledNA$steps)
+datawithfilledNA$steps[filledNA] <- datawithfilledNA$steps.new[filledNA]
+datawithfilledNA <- datawithfilledNA[, c("steps", "date", "interval")]
+
+head(datawithfilledNA)
+sum(is.na(datawithfilledNA))
+
+dailysteps <- aggregate(steps ~ date, datawithfilledNA, FUN=sum)
+hist(dailysteps$steps, breaks=10,ylab="Steps", xlab="Date", main="Steps per day (filled NA)", col="green")
+
+mean(as.integer(dailysteps$steps))
+median(as.integer(dailysteps$steps))
+  
+```
+The impact of the missing data is minimal. The mean remained the same and the histogram looks similar to the one without the missing data.The median changed and became a bit greater than the old one.
+
+##5. Are there differences in activity patterns between weekdays and weekends?
 
 
+```{r echo=TRUE}
+daytype <- function(date) {
+    if (weekdays(as.Date(date)) %in% c("Saturday", "Sunday")) {
+        "weekend"
+    } else {
+        "weekday"
+    }
+}
+daytype <- as.factor(sapply(datawithfilledNA$date, daytype))
 
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
+```
